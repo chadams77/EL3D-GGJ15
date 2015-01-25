@@ -8,11 +8,21 @@
         <script src="js/three.min.js"></script>
         <script src="js/cannon.min.js"></script>
         <script src="js/seedrandom.js"></script>
+        <script src="js/ImprovedNoise.js"></script>
+        <script src="js/buzz.min.js"></script>
         <script src="js/game.js"></script>
     </head>
     <body>
+        <div id='score'>Score: 0</div>
         <script>
-            $(document).ready(GAME.Init);
+            var res = $('<div class="loading">Loading (Generating planets) ...</div>');
+            var dom = $('<div id="gameover"></div>');
+            res.appendTo(dom);
+            dom.appendTo($(document.body));
+
+            window.loadingDom = dom;
+
+            window.setTimeout(GAME.Init, 250);
         </script>
     </body>
 </html>
