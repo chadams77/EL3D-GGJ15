@@ -896,7 +896,7 @@ GAME.Init = function ( )
             {
                 var delta = new CANNON.Vec3(planets[i].p.x, planets[i].p.y, planets[i].p.z);
                 delta = delta.vsub(bomb.body.position);
-                var force = 10.0 * Math.min(10, .175 * Math.PI * Math.pow(planets[i].radius/2, 3.0) / delta.dot(delta));
+                var force = 15.0 * Math.min(10, .175 * Math.PI * Math.pow(planets[i].radius/2, 3.0) / delta.dot(delta));
                 delta.normalize();
                 delta = delta.mult(force);
                 bomb.body.applyForce(delta, bomb.body.position);                
