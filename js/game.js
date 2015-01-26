@@ -7,12 +7,12 @@ var GAME = GAME || {};
 GAME.Init = function ( )
 {
     // Load sfx
-    var music = new buzz.sound('/sfx/music', { formats: [ 'mp3', 'ogg' ]});
-    var explosionSfx = new buzz.sound('/sfx/explosion', { formats: [ 'mp3', 'ogg' ]});
-    var launchSfx = new buzz.sound('/sfx/launch', { formats: [ 'mp3', 'ogg' ]});
-    var thrusterSfx = new buzz.sound('/sfx/thruster', { formats: [ 'mp3', 'ogg' ]});
-    var introSfx = new buzz.sound('/sfx/intro', { formats: [ 'mp3', 'ogg' ]});
-    var noSfx = new buzz.sound('/sfx/no', { formats: [ 'mp3', 'ogg' ]});
+    var music = new buzz.sound('sfx/music', { formats: [ 'mp3', 'ogg' ]});
+    var explosionSfx = new buzz.sound('sfx/explosion', { formats: [ 'mp3', 'ogg' ]});
+    var launchSfx = new buzz.sound('sfx/launch', { formats: [ 'mp3', 'ogg' ]});
+    var thrusterSfx = new buzz.sound('sfx/thruster', { formats: [ 'mp3', 'ogg' ]});
+    var introSfx = new buzz.sound('sfx/intro', { formats: [ 'mp3', 'ogg' ]});
+    var noSfx = new buzz.sound('sfx/no', { formats: [ 'mp3', 'ogg' ]});
     thrusterSfx.play().loop().setVolume(0);
 
     GAME.SW = $(window).width();
