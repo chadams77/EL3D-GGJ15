@@ -7,3 +7,5 @@ Controls:
  * Space - Drop bomb
 
 Copy index.html, img/, js/, sfx/, css/ to a web accessible folder and launch index.html from an HTML5 & WebGL enabled browser
+
+Demo: http://www.blockshipwars.com/EpicLander3D/
