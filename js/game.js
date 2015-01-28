@@ -27,7 +27,7 @@ GAME.Init = function ( )
     // ---
     var NEAR = 0.1, FAR = 10000;
 
-    var camera = GAME.camera = new THREE.PerspectiveCamera( 45, GAME.SW / GAME.SH, NEAR, FAR );
+    var camera = GAME.camera = new THREE.PerspectiveCamera(90, GAME.SW / GAME.SH, NEAR, FAR );
     camera.up.set(0, 0, 1);
     camera.position.set(0, 0, 400);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
@@ -453,6 +453,8 @@ GAME.Init = function ( )
         var body = this.body = new CANNON.Body({ mass: 1 });
         body.addShape(sphereShape);
         body.position.set(p.x, p.y, p.z);
+        body.collisionFilterMask = 1;
+        body.collisionFilterGroup = 2;
         world.add(body);
 
         this.update = function(dt)
@@ -492,7 +494,7 @@ GAME.Init = function ( )
     {
         for (var i=0; i<N; i++)
         {
-            var r = Math.random()*str;
+            var r = Math.random()*str*2;
             var a1 = Math.random()*Math.PI*2.0;
             var a2 = Math.random()*Math.PI*2.0;
             var v = new THREE.Vector3(
@@ -546,6 +548,8 @@ GAME.Init = function ( )
         body.addShape(sphereShape);
         body.position.set(p.x, p.y, p.z);
         body.velocity.set(v.x, v.y, v.z);
+        body.collisionFilterMask = 1;
+        body.collisionFilterGroup = 2;
         world.add(body);
 
         var ballMaterial = new THREE.SpriteMaterial( { map: dustTexture, color: new THREE.Color(0xff0000) } );
@@ -570,7 +574,11 @@ GAME.Init = function ( )
             sprite.position.set(this.body.position.x, this.body.position.y, this.body.position.z);
             slight.position.set(this.body.position.x, this.body.position.y, this.body.position.z);
 
-            var prt = new Particle(new THREE.Vector3(this.body.position.x, this.body.position.y, this.body.position.z), new THREE.Vector3(this.body.velocity.x*60*dt, this.body.velocity.y*60*dt, this.body.velocity.z*60*dt), 1.5);
+            for (var i=0; i<2; i++)
+            {
+                var d = Math.random() * dt;
+                var prt = new Particle(new THREE.Vector3(this.body.position.x-this.body.velocity.x*d+Math.random()*0.25-0.125, this.body.position.y-this.body.velocity.y*d+Math.random()*0.25-0.125, this.body.position.z-this.body.velocity.z*d+Math.random()*0.25-0.125), new THREE.Vector3(this.body.velocity.x, this.body.velocity.y, this.body.velocity.z), 0.75);
+            }
 
             this.t -= dt;
 
@@ -616,16 +624,16 @@ GAME.Init = function ( )
 
     function Particle ( p, v, t, sz )
     {
-        this.p = p;
-        this.v = v ? v : new THREE.Vector3(0,0,0);
-        var sz = this.sz = (sz ? sz : 0.5) * (Math.random() * 0.75 + 0.25) * 3.0;
+        this.p = new THREE.Vector3(p.x, p.y, p.z);
+        v = this.v = v ? new THREE.Vector3(v.x, v.y, v.z) : new THREE.Vector3(0,0,0);
+        var sz = this.sz = (sz ? sz : 0.5) * (Math.random() * 0.75 + 0.25) * 5.0;
         if (Math.random() < 0.25)
             this.clr = new THREE.Color(0xff0000);
         else if (Math.random() < 0.5)
             this.clr = new THREE.Color(0xffff00);
         else
             this.clr = new THREE.Color(0xd0d0d0);
-        this.t = (t ? t : 2.0) * (Math.random() * 0.5 + 0.5);
+        this.t = ((t ? t : 2.0) * (Math.random() * 0.5 + 0.5)) * 0.5;
 
         var ballMaterial = new THREE.SpriteMaterial( { map: dustTexture, color: this.clr, transparent: true } );
         ballMaterial.transparent = true;
@@ -635,26 +643,34 @@ GAME.Init = function ( )
         
         scene.add( sprite );
 
+        var sphereShape = this.sphereShape = new CANNON.Sphere(this.radius);
+        var body = this.body = new CANNON.Body({ mass: 1 });
+        body.addShape(sphereShape);
+        body.position.set(p.x, p.y, p.z);
+        body.velocity.set(v.x, v.y, v.z);
+        body.collisionFilterMask = 1;
+        body.collisionFilterGroup = 2;
+        body.linearDamping = 0.0;
+        world.add(body);
+
         this.update = function(dt)
         {
-            this.v.x -= this.v.x * dt;
-            this.v.y -= this.v.y * dt;
-            this.v.z -= this.v.z * dt;
-            this.v.x -= this.v.x * dt;
-            this.p.x += this.v.x * dt;
-            this.p.y += this.v.y * dt;
-            this.p.z += this.v.z * dt;
-
             this.t -= dt;
 
-            sprite.position.set(this.p.x, this.p.y, this.p.z);
+            p.x += (this.body.position.x - p.x) * dt * 12;
+            p.y += (this.body.position.y - p.y) * dt * 12;
+            p.z += (this.body.position.z - p.z) * dt * 12;
+
+            sprite.position.set(p.x, p.y, p.z);
             var op = Math.min(1, this.t);
             sprite.scale.set( sz, sz, 1 );
             ballMaterial.opacity = op;
+            sprite.updateMatrixWorld();
 
             if (this.t <= 0)
             {
                 scene.remove(sprite);
+                world.remove(body);
                 return false;
             }
 
@@ -690,7 +706,7 @@ GAME.Init = function ( )
     window.loadingDom.remove();
 
     function gameEnd(win){
-        GAME.paused = true;
+        world.remove(ship.body);
         $('#score').text('Score: ' + Math.floor(score));
         var restartBtn = $('<div class="restartBtn">New Game</div>');
         restartBtn.click(function(){
@@ -701,7 +717,9 @@ GAME.Init = function ( )
         res.appendTo(dom);
         restartBtn.appendTo(dom);
         dom.appendTo($(document.body));
+        gameOver = true;
     }
+    var gameOver = false;
 
     function gameUpdate(dt){
 
@@ -715,16 +733,19 @@ GAME.Init = function ( )
         if (bomb)
             bomb = bomb.update(dt);
 
-        ship.update(dt);
-        for (var i=0; i<planets.length; i++)
+        if (!gameOver)
+        {
+            ship.update(dt);
+            for (var i=0; i<planets.length; i++)
             if (planets[i].collideSphere(ship.p, ship.scale))
-            {
-                thrusterSfx.setVolume(0);
-                explosion(ship.p, 600, 40);
-                gameEnd(false);
-                return;
-            }
-        if (targets.length === 0)
+                {
+                    thrusterSfx.setVolume(0);
+                    explosion(ship.p, 150, 20);
+                    gameEnd(false);
+                    break;
+                }
+        }
+        if (targets.length === 0 && !gameOver)
             gameEnd(true);
 
         shiplight.position.set(ship.p.x, ship.p.y, ship.p.z);
@@ -831,19 +852,22 @@ GAME.Init = function ( )
         camera.updateMatrixWorld();
 
         var rot = null;
-        if (keys['A'])
-            rot = new THREE.Vector3(0, 0, .07);
-        if (keys['D'])
-            rot = new THREE.Vector3(0, 0, -.07);
-        if (keys['W'])
-            rot = new THREE.Vector3(-.07, 0, 0);
-        if (keys['S'])
-            rot = new THREE.Vector3(.07, 0, 0);
+        if (!gameOver)
+        {
+            if (keys['A'])
+                rot = new THREE.Vector3(0, 0, .07);
+            if (keys['D'])
+                rot = new THREE.Vector3(0, 0, -.07);
+            if (keys['W'])
+                rot = new THREE.Vector3(-.07, 0, 0);
+            if (keys['S'])
+                rot = new THREE.Vector3(.07, 0, 0);
+        }
         if (atPlanet && rot)
             rot.multiplyScalar(2.0);
         if (rot)
             rot.multiplyScalar(0.5);
-        if (keys[String.fromCharCode(38)])
+        if (keys[String.fromCharCode(38)] && !gameOver)
         {
             thrusterSfx.setVolume(50);
             var vel = new CANNON.Vec3(0, -20, 0);
@@ -854,19 +878,20 @@ GAME.Init = function ( )
             ship.body.applyForce(vel, ship.body.position);
 
             Math.seedrandom(ctime);
-            for (var i=0; i<3; i++)
+            for (var i=0; i<5; i++)
             {
                 var a = Math.random() * Math.PI * 2;
                 var vel = new CANNON.Vec3(Math.cos(a)*0, -10, Math.sin(a)*0);
                 ship.body.quaternion.vmult(new CANNON.Vec3(vel.x, vel.y, vel.z), vel);
                 var off = new CANNON.Vec3(0, .5, 0);
                 ship.body.quaternion.vmult(new CANNON.Vec3(off.x, off.y, off.z), off);
-                var prt = new Particle(new THREE.Vector3(ship.body.position.x+Math.random()*.25-.125+off.x, ship.body.position.y+Math.random()*.25-.125+off.y, ship.body.position.z+Math.random()*.5-.25+off.z), new THREE.Vector3(-vel.x+ship.body.velocity.x*dt*60, -vel.y+ship.body.velocity.y*dt*60, -vel.z+ship.body.velocity.z*dt*60), 0.25);
+                var d = Math.random() * dt;
+                var prt = new Particle(new THREE.Vector3(ship.body.position.x+Math.random()*.25-.125+off.x-ship.body.velocity.x*d, ship.body.position.y+Math.random()*.25-.125+off.y-ship.body.velocity.y*d, ship.body.position.z+Math.random()*.5-.25+off.z-ship.body.velocity.z*d), new THREE.Vector3(-vel.x*0.2+ship.body.velocity.x, -vel.y*0.2+ship.body.velocity.y, -vel.z*0.2+ship.body.velocity.z), 0.25);
             }
         }
         else
             thrusterSfx.setVolume(0);
-        if (keys[' '] && !bomb && atPlanet)
+        if (keys[' '] && !bomb && atPlanet && !gameOver)
         {
             var off = new CANNON.Vec3(0, .5, 0);
             ship.body.quaternion.vmult(new CANNON.Vec3(off.x, off.y, off.z), off);
