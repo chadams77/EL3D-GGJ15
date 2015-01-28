@@ -641,6 +641,9 @@ GAME.Init = function ( )
 
     function Particle ( p, v, t, sz )
     {
+        if (Math.random() > ((1.0/60.0)/FRAME_DELTA))
+            return;
+        
         this.p = new THREE.Vector3(p.x, p.y, p.z);
         v = this.v = v ? new THREE.Vector3(v.x, v.y, v.z) : new THREE.Vector3(0,0,0);
         var sz = this.sz = (sz ? sz : 0.5) * (Math.random() * 0.75 + 0.25) * 5.0;
@@ -755,7 +758,7 @@ GAME.Init = function ( )
                 var d2g = (Math.floor(atPlanet.collideSphere(ship.p, ship.scale, true)*100)/10) + ' m';
             var speed = Math.floor((new THREE.Vector3(ship.body.velocity.x, ship.body.velocity.y, ship.body.velocity.z).length())*100)/10;
             dispScore += (score - dispScore) * dt * 0.5;
-            $('#score').html('Score: ' + Math.floor(dispScore) + '<div style="font-size: 20px; color: #a0a0a0">Speed: ' + speed + ' m/s</div>' + '<div style="font-size: 20px; color: #a0a0a0">Distance to ground: ' + d2g + '</div>');
+            $('#score').html('Score: ' + Math.floor(dispScore) + '<div style="font-size: 20px; color: #a0a0a0">Speed: ' + speed + ' m/s</div>' + '<div style="font-size: 20px; color: #a0a0a0">Distance to ground: ' + d2g + '</div>' + '<div style="font-size: 20px; color: #a0a0a0">Egg sacks left: ' + (targets.length) + '</div>');
         }
         //GAME.paused = true;
         ctime += dt;
