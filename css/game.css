@@ -6,35 +6,77 @@ body, html {
     overflow: hidden;
 }
 
+a, a:visited {
+	color: #888;
+	text-decoration: none;
+}
+
+a:hover {
+	color: #88f;
+	text-decoration: none;
+}
+
 #score {
 	position: fixed;
-	top: 10 !important;
-	left: 10 !important;
+	top: 5px !important;
+	left: 10px !important;
 	padding: 20px;
 	z-index: 100000;
 	color: white;
 	background-color: transparent;
 	font-size: 30px;
+	background-color: rgba(0,0,0,.5);
+}
+
+#title {
+	position: fixed;
+	text-align: center;
+	color: #d5d5d5;
+	width: 100%;
+	left: 0px;
+	top: 10px;
+	padding: 10px;
+	font-size: 45px;
+	text-shadow: 0px 4px 5px rgba(150, 150, 150, 1);
+	z-index: 50000;
+}
+
+#help {
+	position: fixed;
+	top: 10px !important;
+	right: 10px !important;
+	padding: 20px;
+	width: 250px;
+	z-index: 100000;
+	color: #a0d5a0;
+	background-color: transparent;
+	font-size: 15px;
+	background-color: rgba(0,0,0,.5);
+	text-align: right;
 }
 
 #gameover {
 	position: fixed;
 	z-index: 100000;
 	width: 400px;
-	height: 200px;
+	height: 125px;
+	padding-top: 25px;
 	margin-left: -200px;
 	margin-top: -100px;
 	left: 50% !important;
 	top: 50% !important;
 	text-align: center;
+	background-color: rgba(0,0,0,.5);
 }
 
 .restartBtn {
+	margin-top: 25px;
 	background-color: #444444;
 	color: white;
 	text-align: center;
 	font-size: 20px;
 	padding: 10px;
+	cursor: pointer;
 }
 
 .restartBtn:hover {

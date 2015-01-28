@@ -8,11 +8,20 @@ GAME.Init = function ( )
 {
     // Load sfx
     var music = new buzz.sound('sfx/music', { formats: [ 'mp3', 'ogg' ]});
-    var explosionSfx = new buzz.sound('sfx/explosion', { formats: [ 'mp3', 'ogg' ]});
-    var launchSfx = new buzz.sound('sfx/launch', { formats: [ 'mp3', 'ogg' ]});
+    var explosionSfx = [];
+    var expSfxCur = 0;
+    for (var i=0; i<5; i++)
+        explosionSfx.push(new buzz.sound('sfx/explosion', { formats: [ 'mp3', 'ogg' ]}));
+    var launchSfx = [];
+    var lanCurSfx = 0;
+    for (var i=0; i<5; i++)
+        launchSfx.push(new buzz.sound('sfx/launch', { formats: [ 'mp3', 'ogg' ]}));
     var thrusterSfx = new buzz.sound('sfx/thruster', { formats: [ 'mp3', 'ogg' ]});
     var introSfx = new buzz.sound('sfx/intro', { formats: [ 'mp3', 'ogg' ]});
-    var noSfx = new buzz.sound('sfx/no', { formats: [ 'mp3', 'ogg' ]});
+    var noSfx = [];
+    var noSfxCur = 0;
+    for (var i=0; i<3; i++)
+        noSfx.push(new buzz.sound('sfx/no', { formats: [ 'mp3', 'ogg' ]}));
     thrusterSfx.play().loop().setVolume(0);
 
     GAME.SW = $(window).width();
@@ -68,6 +77,7 @@ GAME.Init = function ( )
     renderer.setSize( GAME.SW, GAME.SH );
     renderer.domElement.style.position = "relative";
     renderer.domElement.style.top = '0px';
+    renderer.domElement.style.opacity = '0.0';
     $(renderer.domElement).appendTo($(document.body));
 
     renderer.setClearColor( new THREE.Color(0x000000), 1 );
@@ -205,13 +215,14 @@ GAME.Init = function ( )
             return new Target(vec);
         };
 
-        this.collideSphere = function(sp, sr)
+        this.collideSphere = function(sp, sr, retLen)
         {
             var vec = new THREE.Vector3(sp.x-p.x, sp.y-p.y, sp.z-p.z);
 
             this.getHM(vec);
-
             var len = new THREE.Vector3(sp.x-p.x, sp.y-p.y, sp.z-p.z).length();
+            if (retLen)
+                return len - (vec.length()+sr);
             if ((vec.length()+sr) > len)
                 return true;
             else
@@ -507,28 +518,34 @@ GAME.Init = function ( )
         }
 
         var vec = new THREE.Vector3(p.x-camera.position.x, p.y-camera.position.y, p.z-camera.position.z);
-        explosionSfx.play().setVolume(100/(vec.length()/50+1));
+        explosionSfx[(expSfxCur++)%explosionSfx.length].play().setVolume(100/(Math.pow(vec.length()/20.0,2.0)+1));
     }
 
     var targets = [];
+
+    var timeToNoSfx = null;
 
     function Target ( p )
     {
         this.p = p;
         this.radius = 10;
 
+        var red = Math.random() < 0.5;
+        if (red)
+            this.radius = 5;
+
         var geometry = new THREE.IcosahedronGeometry( this.radius, 1 );
-        var material = new THREE.MeshPhongMaterial( {color: Math.random() < 0.5 ? 0xff0000 : 0x00ff00} );
+        var material = new THREE.MeshPhongMaterial( {color: red ? 0xff0000 : 0x00ff00} );
         var mesh = new THREE.Mesh( geometry, material );
         mesh.position.set(p.x, p.y, p.z);
         scene.add( mesh );
 
-        this.destroy = function()
+        this.destroy = function(bomb)
         {
-            score += 1000;
+            score += 1000 + bomb.bonus;
             explosion(this.p, 300, 40);
             scene.remove(mesh);
-            noSfx.play();
+            timeToNoSfx = ctime + 2.5;
         }
 
         targets.push(this);
@@ -536,7 +553,7 @@ GAME.Init = function ( )
 
     function Bomb ( p, v )
     {
-        launchSfx.play();
+        launchSfx[(lanCurSfx++)%launchSfx.length].play();
 
         this.p = p;
         this.v = v;
@@ -596,7 +613,7 @@ GAME.Init = function ( )
                     for (var j=0; j<ship.legs.length; j++)
                         ship.legs[j].material.needsUpdate = true;                    
 
-                    targets[i].destroy();
+                    targets[i].destroy(this);
                     targets.splice(i, 1);
                     return null;
                 }
@@ -707,7 +724,7 @@ GAME.Init = function ( )
 
     function gameEnd(win){
         world.remove(ship.body);
-        $('#score').text('Score: ' + Math.floor(score));
+        $('#score').html('Score: ' + Math.floor(score));
         var restartBtn = $('<div class="restartBtn">New Game</div>');
         restartBtn.click(function(){
             window.location.reload();
@@ -723,10 +740,23 @@ GAME.Init = function ( )
 
     function gameUpdate(dt){
 
+        if (timeToNoSfx !== null && ctime > timeToNoSfx)
+        {
+            noSfx[(noSfxCur++)%noSfx.length].play();
+            timeToNoSfx = null;
+        }
+
         if (Math.abs(score-dispScore) < 10)
             dispScore = score;
-        dispScore += (score - dispScore) * dt * 0.5;
-        $('#score').text('Score: ' + Math.floor(dispScore));
+        if (!gameOver)
+        {
+            var d2g = 'N/A';
+            if (atPlanet)
+                var d2g = (Math.floor(atPlanet.collideSphere(ship.p, ship.scale, true)*100)/10) + ' m';
+            var speed = Math.floor((new THREE.Vector3(ship.body.velocity.x, ship.body.velocity.y, ship.body.velocity.z).length())*100)/10;
+            dispScore += (score - dispScore) * dt * 0.5;
+            $('#score').html('Score: ' + Math.floor(dispScore) + '<div style="font-size: 20px; color: #a0a0a0">Speed: ' + speed + ' m/s</div>' + '<div style="font-size: 20px; color: #a0a0a0">Distance to ground: ' + d2g + '</div>');
+        }
         //GAME.paused = true;
         ctime += dt;
 
@@ -896,6 +926,8 @@ GAME.Init = function ( )
             var off = new CANNON.Vec3(0, .5, 0);
             ship.body.quaternion.vmult(new CANNON.Vec3(off.x, off.y, off.z), off);
             bomb = new Bomb(new THREE.Vector3(ship.body.position.x+off.x, ship.body.position.y+off.y, ship.body.position.z+off.z), new THREE.Vector3(ship.body.velocity.x, ship.body.velocity.y, ship.body.velocity.z));
+            bomb.bonus = Math.floor(atPlanet.collideSphere(ship.p, ship.scale, true)*10) +
+                         Math.floor((new THREE.Vector3(ship.body.velocity.x, ship.body.velocity.y, ship.body.velocity.z).length())*10);
         }
 
         if (rot)
@@ -944,4 +976,8 @@ GAME.Init = function ( )
     // ---
 
     requestAnimationFrame(animate);
+
+    window.setTimeout(function(){
+        $(renderer.domElement).animate({'opacity': 1.0}, 1250);
+    }, 250);
 };
